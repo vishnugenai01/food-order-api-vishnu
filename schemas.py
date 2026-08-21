@@ -32,3 +32,9 @@ class OrderCreate(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class OrderStatusUpdate(BaseModel):
+    status: str = "placed" or "preparing" or "delivered"
+    class Config:
+        from_attributes = True
+        

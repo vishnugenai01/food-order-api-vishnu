@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from database import SessionLocal, engine, Base
 import models
-from schemas import ItemCreate, ItemResponse, OrderCreate, OrderResponse
+from schemas import ItemCreate, ItemResponse, OrderCreate, OrderResponse, OrderStatusUpdate
 from sqlalchemy.orm import Session
 
 app = FastAPI(title="Food Ordering API")
@@ -189,3 +189,68 @@ def get_order(
         )
 
     return order
+
+# Endpoint 8 - Update order status
+@app.patch("/orders/{order_id}/status")
+def update_order_status(
+    order_id: int,
+    status_data: OrderStatusUpdate,
+    db: Session = Depends(get_db)
+):
+
+    order = db.query(models.Order).filter(
+        models.Order.id == order_id
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    current_status = order.status
+    new_status = status_data.status
+
+    valid_statuses = [
+        "placed",
+        "preparing",
+        "delivered"
+    ]
+
+    if new_status not in valid_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid order status"
+        )
+
+    if current_status == "placed" and new_status not in [
+        "preparing",
+        "delivered"
+    ]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status transition"
+        )
+
+    if current_status == "preparing" and new_status != "delivered":
+        raise HTTPException(
+            status_code=400,
+            detail="Order can only move from preparing to delivered"
+        )
+
+    if current_status == "delivered":
+        raise HTTPException(
+            status_code=400,
+            detail="Delivered order cannot be updated"
+        )
+
+    order.status = new_status
+
+    db.commit()
+    db.refresh(order)
+
+    return {
+        "message": "Order status updated successfully",
+        "order_id": order.id,
+        "status": order.status
+    }
