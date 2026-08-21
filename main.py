@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from database import SessionLocal, engine, Base
 import models
-from schemas import ItemCreate, ItemResponse
+from schemas import ItemCreate, ItemResponse, OrderCreate, OrderResponse
 from sqlalchemy.orm import Session
 
 app = FastAPI(title="Food Ordering API")
@@ -117,3 +117,57 @@ def get_items_by_category(
         )
 
     return items
+
+# Endpoint 6 - Place an order
+@app.post("/orders", response_model=OrderResponse)
+def place_order(
+    order: OrderCreate,
+    db: Session = Depends(get_db)
+):
+
+    total_price = 0
+
+    for order_item in order.items:
+
+        item = db.query(models.Item).filter(
+            models.Item.id == order_item.item_id
+        ).first()
+
+        if item is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Item {order_item.item_id} not found"
+            )
+
+        if not item.in_stock:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{item.name} is out of stock"
+            )
+
+        total_price += item.price * order_item.quantity
+
+    new_order = models.Order(
+        total_price=total_price,
+        status="placed"
+    )
+
+    db.add(new_order)
+    db.commit()
+    db.refresh(new_order)
+
+    for order_item in order.items:
+
+        new_order_item = models.OrderItem(
+            order_id=new_order.id,
+            item_id=order_item.item_id,
+            quantity=order_item.quantity
+        )
+
+        db.add(new_order_item)
+
+    db.commit()
+    db.refresh(new_order)
+
+    return new_order
+
