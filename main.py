@@ -16,12 +16,6 @@ def get_db():
     finally:
         db.close()
 
-
-@app.get("/menu")
-def menu():
-    return "Welcome to Food Ordering API"
-
-
 # Endpoint 1 - Add menu item
 @app.post("/menu", response_model=ItemResponse)
 def add_menu_item(item: ItemCreate, db: Session = Depends(get_db)):
@@ -53,4 +47,30 @@ def list_all_items(db: Session = Depends(get_db)):
 
     return items
 
+# Endpoint 3 - Get menu item by ID
+@app.put("/menu/{item_id}", response_model=ItemResponse)
+def update_menu_item(
+    item_id: int,
+    item: ItemCreate,
+    db: Session = Depends(get_db)
+):
 
+    existing_item = db.query(models.Item).filter(
+        models.Item.id == item_id
+    ).first()
+
+    if existing_item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found"
+        )
+
+    existing_item.name = item.name
+    existing_item.price = item.price
+    existing_item.category = item.category
+    existing_item.in_stock = item.in_stock
+
+    db.commit()
+    db.refresh(existing_item)
+
+    return existing_item
