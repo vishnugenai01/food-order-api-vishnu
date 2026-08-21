@@ -254,3 +254,33 @@ def update_order_status(
         "order_id": order.id,
         "status": order.status
     }
+    
+# Endpoint 9 - Cancel an order
+@app.delete("/orders/{order_id}")
+def cancel_order(
+    order_id: int,
+    db: Session = Depends(get_db)
+):
+
+    order = db.query(models.Order).filter(
+        models.Order.id == order_id
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    if order.status != "placed":
+        raise HTTPException(
+            status_code=400,
+            detail="Order can only be cancelled when status is 'placed'"
+        )
+
+    db.delete(order)
+    db.commit()
+
+    return {
+        "message": "Order cancelled successfully"
+    }
