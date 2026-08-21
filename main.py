@@ -74,3 +74,27 @@ def update_menu_item(
     db.refresh(existing_item)
 
     return existing_item
+
+# Endpoint 4 - Delete menu item
+@app.delete("/menu/{item_id}")
+def delete_menu_item(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+
+    item = db.query(models.Item).filter(
+        models.Item.id == item_id
+    ).first()
+
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Item not found"
+        )
+
+    db.delete(item)
+    db.commit()
+
+    return {
+        "message": "Menu item deleted successfully"
+    }
