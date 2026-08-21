@@ -284,3 +284,29 @@ def cancel_order(
     return {
         "message": "Order cancelled successfully"
     }
+    
+# Endpoint 10 - Order statistics
+@app.get("/orders/stats")
+def order_statistics(
+    db: Session = Depends(get_db)
+):
+
+    total_orders = db.query(models.Order).count()
+
+    delivered_orders = db.query(models.Order).filter(
+        models.Order.status == "delivered"
+    ).count()
+
+    orders = db.query(models.Order).all()
+
+    total_revenue = sum(
+        order.total_price
+        for order in orders
+        if order.status == "delivered"
+    )
+
+    return {
+        "total_orders": total_orders,
+        "delivered_count": delivered_orders,
+        "total_revenue": total_revenue
+    }
