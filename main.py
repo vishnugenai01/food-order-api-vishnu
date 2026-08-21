@@ -98,3 +98,22 @@ def delete_menu_item(
     return {
         "message": "Menu item deleted successfully"
     }
+    
+# Endpoint 5 - Filter menu by category
+@app.get("/menu/category/{category}", response_model=list[ItemResponse])
+def get_items_by_category(
+    category: str,
+    db: Session = Depends(get_db)
+):
+
+    items = db.query(models.Item).filter(
+        models.Item.category == category
+    ).all()
+
+    if not items:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No items found in category '{category}'"
+        )
+
+    return items
