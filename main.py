@@ -171,3 +171,21 @@ def place_order(
 
     return new_order
 
+# Endpoint 7 - Get order details
+@app.get("/orders/{order_id}", response_model=OrderResponse)
+def get_order(
+    order_id: int,
+    db: Session = Depends(get_db)
+):
+
+    order = db.query(models.Order).filter(
+        models.Order.id == order_id
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    return order
