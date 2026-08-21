@@ -39,4 +39,18 @@ def add_menu_item(item: ItemCreate, db: Session = Depends(get_db)):
 
     return new_item
 
+# Endpoint 2 - List all menu items
+@app.get("/menu", response_model=list[ItemResponse])
+def list_all_items(db: Session = Depends(get_db)):
+
+    items = db.query(models.Item).all()
+
+    if not items:
+        raise HTTPException(
+            status_code=404,
+            detail="No menu items found"
+        )
+
+    return items
+
 
