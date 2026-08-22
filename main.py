@@ -91,6 +91,16 @@ def delete_menu_item(
             status_code=404,
             detail="Item not found"
         )
+        
+    existing_order = db.query(models.Order).filter(
+        models.Order.item_id == item_id
+    ).first()
+    
+    if existing_order is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete item because it is present in  order"
+        )
 
     db.delete(item)
     db.commit()
