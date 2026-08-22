@@ -125,9 +125,6 @@ def place_order(
     db: Session = Depends(get_db)
 ):
 
-    total_price = 0
-
-
     item = db.query(models.Item).filter(
         models.Item.id == order.item_id
     ).first()
@@ -135,7 +132,7 @@ def place_order(
     if item is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Item {order.id} not found"
+            detail=f"Item {order.item_id} not found"
         )
 
     if not item.in_stock:
@@ -147,7 +144,7 @@ def place_order(
     total_price = item.price * order.quantity
 
     new_order = models.Order(
-            item_name=item.name,
+            item_id=order.item_id,
             quantity=order.quantity,
             total_price=total_price,
             order_status="placed"

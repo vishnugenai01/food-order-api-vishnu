@@ -20,12 +20,13 @@ class ItemResponse(BaseModel):
         from_attributes = True
         
 class OrderCreate(BaseModel):
-    item_name: str
+
+    item_id: int
     quantity: int
                 
 class OrderResponse(BaseModel):
     id: int
-    item_name: str
+    item_id: int
     quantity: int
     total_price: float
     order_status: str
