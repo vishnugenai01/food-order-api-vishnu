@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class ItemCreate(BaseModel):
+    id: int
     name: str
     price: float
     category: str = "veg" or "Non-veg"
@@ -18,23 +19,24 @@ class ItemResponse(BaseModel):
     class Config:
         from_attributes = True
         
+class OrderCreate(BaseModel):
+    item_name: str
+    quantity: int
+                
 class OrderResponse(BaseModel):
     id: int
-    item_id: int
+    item_name: str
     quantity: int
     total_price: float
-
-class OrderCreate(BaseModel):
-    name: str
-    price: float
-    category: str = "veg" or "Non-veg"
-    in_stock: bool = True
-
+    order_status: str
+    
     class Config:
-        from_attributes = True
+            from_attributes = True
+
         
 class OrderStatusUpdate(BaseModel):
-    status: str = "placed" or "preparing" or "delivered"
+    status: str 
+    
     class Config:
         from_attributes = True
         

@@ -127,45 +127,33 @@ def place_order(
 
     total_price = 0
 
-    for order_item in order.items:
 
-        item = db.query(models.Item).filter(
-            models.Item.id == order_item.item_id
-        ).first()
+    item = db.query(models.Item).filter(
+        models.Item.id == order.item_id
+    ).first()
 
-        if item is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {order_item.item_id} not found"
-            )
-
-        if not item.in_stock:
-            raise HTTPException(
-                status_code=400,
-                detail=f"{item.name} is out of stock"
-            )
-
-        total_price += item.price * order_item.quantity
-
-    new_order = models.Order(
-        total_price=total_price,
-        status="placed"
-    )
-
-    db.add(new_order)
-    db.commit()
-    db.refresh(new_order)
-
-    for order_item in order.items:
-
-        new_order_item = models.OrderItem(
-            order_id=new_order.id,
-            item_id=order_item.item_id,
-            quantity=order_item.quantity
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Item {order.id} not found"
         )
 
-        db.add(new_order_item)
+    if not item.in_stock:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{item.name} is out of stock"
+        )
 
+    total_price = item.price * order.quantity
+
+    new_order = models.Order(
+            item_name=item.name,
+            quantity=order.quantity,
+            total_price=total_price,
+            order_status="placed"
+        )
+
+    db.add(new_order)
     db.commit()
     db.refresh(new_order)
 
@@ -208,7 +196,7 @@ def update_order_status(
             detail="Order not found"
         )
 
-    current_status = order.status
+    current_status = order.order_status
     new_status = status_data.status
 
     valid_statuses = [
@@ -244,7 +232,7 @@ def update_order_status(
             detail="Delivered order cannot be updated"
         )
 
-    order.status = new_status
+    order.order_status = new_status
 
     db.commit()
     db.refresh(order)
@@ -252,7 +240,7 @@ def update_order_status(
     return {
         "message": "Order status updated successfully",
         "order_id": order.id,
-        "status": order.status
+        "status": order.order_status
     }
     
 # Endpoint 9 - Cancel an order
@@ -294,7 +282,7 @@ def order_statistics(
     total_orders = db.query(models.Order).count()
 
     delivered_orders = db.query(models.Order).filter(
-        models.Order.status == "delivered"
+        models.Order.order_status == "delivered"
     ).count()
 
     orders = db.query(models.Order).all()
@@ -302,7 +290,7 @@ def order_statistics(
     total_revenue = sum(
         order.total_price
         for order in orders
-        if order.status == "delivered"
+        if order.order_status == "delivered"
     )
 
     return {
