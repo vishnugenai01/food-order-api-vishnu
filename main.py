@@ -166,7 +166,33 @@ def place_order(
 
     return new_order
 
-# Endpoint 7 - Get order details
+# Endpoint 7 - Order statistics
+@app.get("/orders/stats")
+def order_statistics(
+    db: Session = Depends(get_db)
+):
+
+    total_orders = db.query(models.Order).count()
+
+    delivered_orders = db.query(models.Order).filter(
+        models.Order.order_status == "delivered"
+    ).count()
+
+    orders = db.query(models.Order).all()
+
+    total_revenue = sum(
+        order.total_price
+        for order in orders
+        if order.order_status == "delivered"
+    )
+
+    return {
+        "total_orders": total_orders,
+        "delivered_count": delivered_orders,
+        "total_revenue": total_revenue
+    }
+
+# Endpoint 8 - Get order details
 @app.get("/orders/{order_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
@@ -185,7 +211,7 @@ def get_order(
 
     return order
 
-# Endpoint 8 - Update order status
+# Endpoint 9 - Update order status
 @app.patch("/orders/{order_id}/status")
 def update_order_status(
     order_id: int,
@@ -250,7 +276,7 @@ def update_order_status(
         "status": order.order_status
     }
     
-# Endpoint 9 - Cancel an order
+# Endpoint 10 - Cancel an order
 @app.delete("/orders/{order_id}")
 def cancel_order(
     order_id: int,
@@ -267,7 +293,7 @@ def cancel_order(
             detail="Order not found"
         )
 
-    if order.status != "placed":
+    if order.order_status != "placed":
         raise HTTPException(
             status_code=400,
             detail="Order can only be cancelled when status is 'placed'"
@@ -280,28 +306,3 @@ def cancel_order(
         "message": "Order cancelled successfully"
     }
     
-# Endpoint 10 - Order statistics
-@app.get("/orders/stats")
-def order_statistics(
-    db: Session = Depends(get_db)
-):
-
-    total_orders = db.query(models.Order).count()
-
-    delivered_orders = db.query(models.Order).filter(
-        models.Order.order_status == "delivered"
-    ).count()
-
-    orders = db.query(models.Order).all()
-
-    total_revenue = sum(
-        order.total_price
-        for order in orders
-        if order.order_status == "delivered"
-    )
-
-    return {
-        "total_orders": total_orders,
-        "delivered_count": delivered_orders,
-        "total_revenue": total_revenue
-    }
