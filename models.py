@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
 
 class Item(Base):
@@ -7,8 +8,12 @@ class Item(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     price = Column(Float, nullable=False)
-    category = Column(String, default="veg")
+    dietary_tags = Column(String, default="veg")
+    category = Column(String)
     in_stock = Column(Boolean, default=True)
+    rating = Column(Float, default=0.0)
+    restaurant_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
+    restaurant = relationship("Restaurant", back_populates="items")
     
 class Order(Base):
     __tablename__ = "Orders"
@@ -18,3 +23,11 @@ class Order(Base):
     quantity = Column(Integer, nullable=False)
     total_price = Column(Float, nullable=False)
     order_status = Column(String, default="pending") # pending, completed, cancelled
+    
+class Restaurant(Base):
+    __tablename__ = "restaurants"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    items = relationship("Item", back_populates="restaurant", cascade="all, delete")

@@ -1,13 +1,12 @@
 from fastapi import FastAPI, HTTPException, Depends
 from database import SessionLocal, engine, Base
 import models
-from schemas import ItemCreate, ItemResponse, OrderCreate, OrderResponse, OrderStatusUpdate
+from schemas import ItemCreate, ItemResponse, OrderCreate, OrderResponse, OrderStatusUpdate, RestaurantCreate, RestaurantResponse
 from sqlalchemy.orm import Session
 
 app = FastAPI(title="Food Ordering API")
 
 Base.metadata.create_all(bind=engine)
-
 
 def get_db():
     try:
@@ -16,15 +15,74 @@ def get_db():
     finally:
         db.close()
 
-# Endpoint 1 - Add menu item
-@app.post("/menu", response_model=ItemResponse)
-def add_menu_item(item: ItemCreate, db: Session = Depends(get_db)):
+#Endpoint 1 - Add Restaurant
+@app.post(
+    "/restaurants",
+    response_model=RestaurantResponse
+)
+def add_restaurant(
+    restaurant: RestaurantCreate,
+    db: Session = Depends(get_db)
+):
+
+    new_restaurant = models.Restaurant(
+        name=restaurant.name,
+        location=restaurant.location
+    )
+
+    db.add(new_restaurant)
+    db.commit()
+    db.refresh(new_restaurant)
+
+    return new_restaurant
+
+# Endpoint 2 - Get all restaurants
+@app.get(
+    "/restaurants/list",
+    response_model=list[RestaurantResponse]
+)
+def get_all_restaurants(
+    db: Session = Depends(get_db)
+):
+    restaurants = db.query(models.Restaurant).all()
+
+    if not restaurants:
+        raise HTTPException(
+            status_code=404,
+            detail="No restaurants found"
+        )
+
+    return restaurants
+
+# Endpoint 3 - Add menu item to a restaurant
+@app.post(
+    "/restaurants/{restaurant_id}/menu",
+    response_model=ItemResponse
+)
+def add_restaurant_menu_items(
+    restaurant_id: int,
+    item: ItemCreate,
+    db: Session = Depends(get_db)
+):
+
+    restaurant = db.query(models.Restaurant).filter(
+        models.Restaurant.id == restaurant_id
+    ).first()
+
+    if restaurant is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Restaurant not found"
+        )
 
     new_item = models.Item(
         name=item.name,
         price=item.price,
+        dietary_tags=item.dietary_tags,
         category=item.category,
-        in_stock=item.in_stock
+        in_stock=item.in_stock,
+        rating=item.rating,
+        restaurant_id=restaurant_id
     )
 
     db.add(new_item)
@@ -33,11 +91,63 @@ def add_menu_item(item: ItemCreate, db: Session = Depends(get_db)):
 
     return new_item
 
-# Endpoint 2 - List all menu items
-@app.get("/menu", response_model=list[ItemResponse])
-def list_all_items(db: Session = Depends(get_db)):
+# Endpoint 4 - Get menu of a restaurant
+@app.get(
+    "/restaurants/{restaurant_id}/menu",
+    response_model=list[ItemResponse]
+)
+def get_restaurant_menu(
+    restaurant_id: int,
+    db: Session = Depends(get_db)
+):
 
-    items = db.query(models.Item).all()
+    restaurant = db.query(models.Restaurant).filter(
+        models.Restaurant.id == restaurant_id
+    ).first()
+
+    if restaurant is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Restaurant not found"
+        )
+
+    items = db.query(models.Item).filter(
+        models.Item.restaurant_id == restaurant_id
+    ).all()
+
+    if not items:
+        raise HTTPException(
+            status_code=404,
+            detail="No menu items found for this restaurant"
+        )
+
+    return items
+
+# Endpoint 5 - Get best rated food
+@app.get(
+    "/menu/best/rated/{restaurant_id}",
+    response_model=list[ItemResponse]
+)
+def get_best_items(
+    restaurant_id: int,
+    db: Session = Depends(get_db)
+):
+    restaurant = db.query(models.Restaurant).filter(
+        models.Restaurant.id == restaurant_id
+    ).first()
+    
+    if restaurant is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Restaurant not found"
+        )
+
+    items = db.query(models.Item).filter(
+        models.Item.in_stock == True,
+        models.Item.rating > 4
+    ).order_by(
+        models.Item.rating.desc()
+    ).all()
 
     if not items:
         raise HTTPException(
@@ -47,7 +157,28 @@ def list_all_items(db: Session = Depends(get_db)):
 
     return items
 
-# Endpoint 3 - Get menu item by ID
+# Endpoint 6 - Filter menu by dietary_tag
+@app.get("/restaurants/{restaurant_id}/menu/dietary_tag/{dietary_tag}", response_model=list[ItemResponse])
+def get_items_by_dietary_tag(
+    restaurant_id: int,
+    dietary_tag: str,
+    db: Session = Depends(get_db)
+):
+
+    items = db.query(models.Item).filter(
+        models.Item.restaurant_id == restaurant_id,
+        models.Item.dietary_tags.ilike(dietary_tag)
+    ).all()
+
+    if not items:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No items found in category '{dietary_tag}'"
+        )
+
+    return items
+
+# Endpoint 7 - Get menu item by ID
 @app.put("/menu/{item_id}", response_model=ItemResponse)
 def update_menu_item(
     item_id: int,
@@ -67,7 +198,7 @@ def update_menu_item(
 
     existing_item.name = item.name
     existing_item.price = item.price
-    existing_item.category = item.category
+    existing_item.dietary_tags = item.dietary_tags
     existing_item.in_stock = item.in_stock
 
     db.commit()
@@ -75,7 +206,7 @@ def update_menu_item(
 
     return existing_item
 
-# Endpoint 4 - Delete menu item
+# Endpoint 8 - Delete menu item
 @app.delete("/menu/{item_id}")
 def delete_menu_item(
     item_id: int,
@@ -109,26 +240,7 @@ def delete_menu_item(
         "message": "Menu item deleted successfully"
     }
     
-# Endpoint 5 - Filter menu by category
-@app.get("/menu/category/{category}", response_model=list[ItemResponse])
-def get_items_by_category(
-    category: str,
-    db: Session = Depends(get_db)
-):
-
-    items = db.query(models.Item).filter(
-        models.Item.category == category
-    ).all()
-
-    if not items:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No items found in category '{category}'"
-        )
-
-    return items
-
-# Endpoint 6 - Place an order
+# Endpoint 9 - Place an order
 @app.post("/orders", response_model=OrderResponse)
 def place_order(
     order: OrderCreate,
@@ -166,33 +278,7 @@ def place_order(
 
     return new_order
 
-# Endpoint 7 - Order statistics
-@app.get("/orders/stats")
-def order_statistics(
-    db: Session = Depends(get_db)
-):
-
-    total_orders = db.query(models.Order).count()
-
-    delivered_orders = db.query(models.Order).filter(
-        models.Order.order_status == "delivered"
-    ).count()
-
-    orders = db.query(models.Order).all()
-
-    total_revenue = sum(
-        order.total_price
-        for order in orders
-        if order.order_status == "delivered"
-    )
-
-    return {
-        "total_orders": total_orders,
-        "delivered_count": delivered_orders,
-        "total_revenue": total_revenue
-    }
-
-# Endpoint 8 - Get order details
+# Endpoint 10 - Get order details
 @app.get("/orders/{order_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
@@ -211,7 +297,7 @@ def get_order(
 
     return order
 
-# Endpoint 9 - Update order status
+# Endpoint 11 - Update order status
 @app.patch("/orders/{order_id}/status")
 def update_order_status(
     order_id: int,
@@ -276,7 +362,7 @@ def update_order_status(
         "status": order.order_status
     }
     
-# Endpoint 10 - Cancel an order
+# Endpoint 12 - Cancel an order
 @app.delete("/orders/{order_id}")
 def cancel_order(
     order_id: int,
@@ -306,3 +392,29 @@ def cancel_order(
         "message": "Order cancelled successfully"
     }
     
+# Endpoint 13 - Order statistics
+@app.get("/orders/stats")
+def order_statistics(
+    db: Session = Depends(get_db)
+):
+
+    total_orders = db.query(models.Order).count()
+
+    delivered_orders = db.query(models.Order).filter(
+        models.Order.order_status == "delivered"
+    ).count()
+
+    orders = db.query(models.Order).all()
+
+    total_revenue = sum(
+        order.total_price
+        for order in orders
+        if order.order_status == "delivered"
+    )
+
+    return {
+        "total_orders": total_orders,
+        "delivered_count": delivered_orders,
+        "total_revenue": total_revenue
+    }
+
