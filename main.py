@@ -286,7 +286,14 @@ def place_order(
     db.commit()
     db.refresh(new_order)
 
-    return new_order
+    return {
+        "id": new_order.id,
+        "item_name": item.name,
+        "item_id": new_order.item.id,
+        "quantity": new_order.quantity,
+        "total_price": new_order.total_price,
+        "order_status": new_order.order_status
+    }
 
 # Endpoint 10 - Get order details
 @app.get("/orders/{order_id}", response_model=OrderResponse)
