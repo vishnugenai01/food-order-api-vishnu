@@ -247,6 +247,15 @@ def place_order(
     order: OrderCreate,
     db: Session = Depends(get_db)
 ):
+    restaurant = db.query(models.Restaurant).filter(
+        models.Restaurant.id == order.restaurant_id
+    ).first()
+    
+    if restaurant is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Restaurant {order.restaurant_id} not found"
+        )
 
     item = db.query(models.Item).filter(
         models.Item.id == order.item_id
