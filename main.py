@@ -141,8 +141,9 @@ def get_best_items(
             status_code=404,
             detail="Restaurant not found"
         )
-
+    print("Restaurant ID received:", restaurant_id)
     items = db.query(models.Item).filter(
+        models.Item.restaurant_id == restaurant_id,
         models.Item.in_stock == True,
         models.Item.rating > 4
     ).order_by(
@@ -178,7 +179,7 @@ def get_items_by_dietary_tag(
 
     return items
 
-# Endpoint 7 - Get menu item by ID
+# Endpoint 7 - update menu item by ID
 @app.put("/menu/{item_id}", response_model=ItemResponse)
 def update_menu_item(
     item_id: int,
@@ -392,7 +393,7 @@ def cancel_order(
         "message": "Order cancelled successfully"
     }
     
-# Endpoint 13 - Order statistics
+# Endpoint 13 - Get Order statistics
 @app.get("/orders/stats")
 def order_statistics(
     db: Session = Depends(get_db)
