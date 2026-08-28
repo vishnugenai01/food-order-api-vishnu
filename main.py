@@ -309,10 +309,26 @@ def get_order(
     if order is None:
         raise HTTPException(
             status_code=404,
-            detail="Order not found"
+            detail=f"Order {order_id} not found"
+        )
+    item = db.query(models.Item).filter(
+        models.Item.id == order.item_id
+    ).first()
+    
+    if item is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Item {order.item_id} not found"
         )
 
-    return order
+    return {
+        "id": order.id,
+        "item_name": item.name,
+        "item_id": order.item_id,
+        "quantity": order.quantity,
+        "total_price": order.total_price,
+        "order_status": order.order_status
+    }
 
 # Endpoint 11 - Update order status
 @app.patch("/orders/{order_id}/status")
