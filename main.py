@@ -200,7 +200,9 @@ def update_menu_item(
     existing_item.name = item.name
     existing_item.price = item.price
     existing_item.dietary_tags = item.dietary_tags
+    existing_item.category = item.category
     existing_item.in_stock = item.in_stock
+    existing_item.rating = item.rating
 
     db.commit()
     db.refresh(existing_item)
