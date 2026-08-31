@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from database import Base
 
 class Item(Base):
@@ -31,3 +32,15 @@ class Restaurant(Base):
     name = Column(String, nullable=False)
     location = Column(String, nullable=False)
     items = relationship("Item", back_populates="restaurant", cascade="all, delete")
+    
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, nullable=False, index=True)
+    role = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), 
+        server_default=func.now()
+    )
