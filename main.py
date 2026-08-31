@@ -295,6 +295,32 @@ def place_order(
         "order_status": new_order.order_status
     }
 
+# Endpoint 13 - Get Order statistics
+@app.get("/orders/stats")
+def order_statistics(
+    db: Session = Depends(get_db)
+):
+
+    total_orders = db.query(models.Order).count()
+
+    delivered_orders = db.query(models.Order).filter(
+        models.Order.order_status == "delivered"
+    ).count()
+
+    orders = db.query(models.Order).all()
+
+    total_revenue = sum(
+        order.total_price
+        for order in orders
+        if order.order_status == "delivered"
+    )
+
+    return {
+        "total_orders": total_orders,
+        "delivered_count": delivered_orders,
+        "total_revenue": total_revenue
+    }
+
 # Endpoint 10 - Get order details
 @app.get("/orders/{order_id}", response_model=OrderResponse)
 def get_order(
@@ -425,29 +451,4 @@ def cancel_order(
         "message": "Order cancelled successfully"
     }
     
-# Endpoint 13 - Get Order statistics
-@app.get("/orders/stats")
-def order_statistics(
-    db: Session = Depends(get_db)
-):
-
-    total_orders = db.query(models.Order).count()
-
-    delivered_orders = db.query(models.Order).filter(
-        models.Order.order_status == "delivered"
-    ).count()
-
-    orders = db.query(models.Order).all()
-
-    total_revenue = sum(
-        order.total_price
-        for order in orders
-        if order.order_status == "delivered"
-    )
-
-    return {
-        "total_orders": total_orders,
-        "delivered_count": delivered_orders,
-        "total_revenue": total_revenue
-    }
 
