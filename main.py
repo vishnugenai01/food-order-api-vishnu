@@ -3,6 +3,7 @@ from database import SessionLocal, engine, Base
 import models
 from schemas import ItemCreate, ItemResponse, OrderCreate, OrderResponse, OrderStatusUpdate, RestaurantCreate, RestaurantResponse
 from sqlalchemy.orm import Session
+from memory import save_message, get_messages
 
 app = FastAPI(title="Food Ordering API")
 
@@ -14,6 +15,28 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+@app.post("/messages/{user_id}")
+def add_message(
+    user_id: str,
+    role: str,
+    content: str,
+    db: Session = Depends(get_db)
+):
+
+    save_message(db, user_id, role, content)
+
+    return {
+        "message": "Message saved successfully"
+    }
+    
+@app.get("/messages/{user_id}")
+def fetch_messages(
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+
+    return get_messages(db, user_id)
 
 #Endpoint 1 - Add Restaurant
 @app.post(
