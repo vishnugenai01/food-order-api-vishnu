@@ -17,7 +17,7 @@ class Item(Base):
     restaurant = relationship("Restaurant", back_populates="items")
     
 class Order(Base):
-    __tablename__ = "Orders"    
+    __tablename__ = "orders"    
     
     id = Column(Integer, primary_key=True, index=True)
     item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
