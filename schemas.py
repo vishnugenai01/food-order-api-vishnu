@@ -35,6 +35,7 @@ class ItemResponse(BaseModel):
         from_attributes = True
         
 class OrderCreate(BaseModel):
+    user_id: str
     restaurant_id: int
     item_id: int
     quantity: int

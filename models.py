@@ -17,9 +17,11 @@ class Item(Base):
     restaurant = relationship("Restaurant", back_populates="items")
     
 class Order(Base):
-    __tablename__ = "orders"    
+    __tablename__ = "Orders"    
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    restaurant_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
     item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     total_price = Column(Float, nullable=False)

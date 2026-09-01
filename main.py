@@ -301,6 +301,8 @@ def place_order(
     total_price = item.price * order.quantity
 
     new_order = models.Order(
+            user_id=order.user_id,
+            restaurant_id=order.restaurant_id,
             item_id=order.item_id,
             quantity=order.quantity,
             total_price=total_price,
@@ -313,6 +315,7 @@ def place_order(
 
     return {
         "id": new_order.id,
+        "user_id": new_order.user_id,
         "item_name": item.name,
         "item_id": new_order.item_id,
         "quantity": new_order.quantity,
