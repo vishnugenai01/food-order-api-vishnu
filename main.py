@@ -352,7 +352,7 @@ def order_statistics(
 # Endpoint 11 - Get orders for a particular user
 @app.get("/orders/user/{user_id}")
 def get_user_orders(
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
     orders = (
@@ -392,7 +392,7 @@ def get_user_orders(
 @app.get("/orders/{order_id}/user/{user_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
-    user_id: int,   
+    user_id: str,   
     db: Session = Depends(get_db)
 ):
 
@@ -495,7 +495,7 @@ def update_order_status(
 @app.delete("/orders/{order_id}")
 def cancel_order(
     order_id: int,
-    user_id: int,
+    user_id: str,
     db: Session = Depends(get_db)
 ):
 
