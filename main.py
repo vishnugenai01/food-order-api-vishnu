@@ -323,7 +323,7 @@ def place_order(
         "order_status": new_order.order_status
     }
 
-# Endpoint 13 - Get Order statistics
+# Endpoint 10 - Get Order statistics
 @app.get("/orders/stats")
 def order_statistics(
     db: Session = Depends(get_db)
@@ -348,22 +348,63 @@ def order_statistics(
         "delivered_count": delivered_orders,
         "total_revenue": total_revenue
     }
+    
+# Endpoint 11 - Get orders for a particular user
+@app.get("/orders/user/{user_id}")
+def get_user_orders(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    orders = (
+        db.query(models.Order)
+        .filter(models.Order.user_id == user_id)
+        .all()
+    )
 
-# Endpoint 10 - Get order details
-@app.get("/orders/{order_id}", response_model=OrderResponse)
+    if not orders:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No orders found for user {user_id}"
+        )
+
+    result = []
+
+    for order in orders:
+
+        item = db.query(models.Item).filter(
+            models.Item.id == order.item_id
+        ).first()
+
+        result.append({
+            "id": order.id,
+            "user_id": order.user_id,
+            "item_name": item.name if item else "Unknown item",
+            "item_id": order.item_id,
+            "quantity": order.quantity,
+            "total_price": order.total_price,
+            "order_status": order.order_status
+        })
+
+    return result
+
+
+# Endpoint 12 - Get order details
+@app.get("/orders/{order_id}/user/{user_id}", response_model=OrderResponse)
 def get_order(
     order_id: int,
+    user_id: int,   
     db: Session = Depends(get_db)
 ):
 
     order = db.query(models.Order).filter(
-        models.Order.id == order_id
+        models.Order.id == order_id,
+        models.Order.user_id == user_id
     ).first()
 
     if order is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Order {order_id} not found"
+            detail=f"No Order {order_id} found for user {user_id}"
         )
     item = db.query(models.Item).filter(
         models.Item.id == order.item_id
@@ -377,6 +418,7 @@ def get_order(
 
     return {
         "id": order.id,
+        "user_id": order.user_id,
         "item_name": item.name,
         "item_id": order.item_id,
         "quantity": order.quantity,
@@ -384,7 +426,7 @@ def get_order(
         "order_status": order.order_status
     }
 
-# Endpoint 11 - Update order status
+# Endpoint 13 - Update order status
 @app.patch("/orders/{order_id}/status")
 def update_order_status(
     order_id: int,
@@ -449,21 +491,23 @@ def update_order_status(
         "status": order.order_status
     }
     
-# Endpoint 12 - Cancel an order
+# Endpoint 14 - Cancel an order
 @app.delete("/orders/{order_id}")
 def cancel_order(
     order_id: int,
+    user_id: int,
     db: Session = Depends(get_db)
 ):
 
     order = db.query(models.Order).filter(
-        models.Order.id == order_id
+        models.Order.id == order_id,
+        models.Order.user_id == user_id
     ).first()
 
     if order is None:
         raise HTTPException(
             status_code=404,
-            detail="Order not found"
+            detail=f"No Order {order_id} found for user {user_id}"
         )
 
     if order.order_status != "placed":
