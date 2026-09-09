@@ -1,8 +1,4 @@
 __pycache__/
-script.py.mako
-alembic/README
 *.pyc
 .venv/
 .env
-env.py
-.python-version
