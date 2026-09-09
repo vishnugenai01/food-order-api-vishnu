@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from database import Base
+from sqlalchemy.orm import DeclarativeBase, relationship
+
+class Base(DeclarativeBase):
+    pass
 
 class Item(Base):
     __tablename__ = "items"
@@ -20,12 +21,14 @@ class Order(Base):
     __tablename__ = "Orders"    
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)
+    user_id = Column(String, nullable=False)
     restaurant_id = Column(Integer, ForeignKey("restaurants.id"), nullable=False)
     item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     total_price = Column(Float, nullable=False)
     order_status = Column(String, default="pending") # pending, completed, cancelled
+    
+    item = relationship("Item")
     
 class Restaurant(Base):
     __tablename__ = "restaurants"
