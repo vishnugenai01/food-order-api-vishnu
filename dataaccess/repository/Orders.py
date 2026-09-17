@@ -72,7 +72,7 @@ class OrdersRepository:
         
         return db_order 
         
-    def order_statistics(self,db: Session):
+    def order_statistics(self):
         total_orders = self.db.query(Order).count()
         delivered_count = self.db.query(Order).filter(Order.order_status == "delivered").count()
         cancelled_count = self.db.query(Order).filter(Order.order_status == "cancelled").count()

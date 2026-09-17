@@ -9,7 +9,7 @@ router = APIRouter(
     tags=["orders"],
 )
 
-@router.post("/create", response_model=OrderResponse)
+@router.post("/orders/create", response_model=OrderResponse)
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     try:
         service_logic = OrdersLogic(db)
