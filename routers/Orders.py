@@ -85,7 +85,7 @@ async def get_order_by_id(order_id: int, db: Session = Depends(get_db)):
         print("Error in get_order_by_id:", repr(e))
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/{order_id}/status", response_model=OrderResponse)
+@router.patch("/{order_id}/status", response_model=OrderResponse)
 async def update_order_status(order_id: int, status: OrderStatusUpdate, db: Session = Depends(get_db)):
     try:
         service_logic = OrdersLogic(db)
