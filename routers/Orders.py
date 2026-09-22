@@ -102,7 +102,7 @@ async def update_order_status(order_id: int, status: OrderStatusUpdate, db: Sess
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{order_id}")
-async def delete_order_by_id(order_id: int, db: Session = Depends(get_db)):
+async def delete_order_by_id(order_id: int, user_id:str, db: Session = Depends(get_db)):
     try:
         service_logic = OrdersLogic(db)
 

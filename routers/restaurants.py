@@ -20,18 +20,11 @@ async def create_restaurant(restaurant: RestaurantCreate, db: Session = Depends(
         print("CREATE RESTAURANT ERROR:", repr(e))
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/", response_model=list[RestaurantResponse])
+@router.get("/list", response_model=list[RestaurantResponse])
 async def get_all_restaurants(db: Session = Depends(get_db)):
     service_logic = RestaurantsLogic(db=db)
     
     service_response = service_logic.get_all_restaurants()
-    return service_response
-
-@router.get("/{id}", response_model=RestaurantResponse)
-async def get_restaurant_by_id(id: int, db: Session = Depends(get_db)):
-    service_logic = RestaurantsLogic(db=db)
-
-    service_response = service_logic.get_restaurant_by_id(id)
     return service_response
 
 @router.get("/location/{location}", response_model=list[RestaurantResponse])
@@ -40,4 +33,10 @@ async def get_restaurants_by_location(location: str, db: Session = Depends(get_d
 
     service_response = service_logic.get_restaurants_by_location(location)
     return service_response
-    
+
+@router.get("/{id}", response_model=RestaurantResponse)
+async def get_restaurant_by_id(id: int, db: Session = Depends(get_db)):
+    service_logic = RestaurantsLogic(db=db)
+
+    service_response = service_logic.get_restaurant_by_id(id)
+    return service_response
