@@ -4,4 +4,3 @@ alembic/README
 *.pyc
 .venv/
 .env
-.python-version
