@@ -5,7 +5,7 @@ class RestaurantRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_restaurant(self, restaurant: Restaurant, db: Session):
+    def create_restaurant(self, restaurant: Restaurant):
         new_restaurant = Restaurant(
             name = restaurant.name,
             location = restaurant.location,
